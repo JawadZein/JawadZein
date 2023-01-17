@@ -1,0 +1,38 @@
+name: pipeline-deployment
+
+on: 
+  push:
+    branches:
+    - feat/ghactions-deployments
+
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      ResourceGroupName: "petter-rg"
+      ResourceGroupLocation: "northeurope"
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+   
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZ_CREDS }}
+    
+    - name: Create rg
+      uses: Azure/CLI@v1
+      with:
+        inlineScript: |
+          #!/bin/bash
+          az group create --name ${{ env.ResourceGroupName }} --location ${{ env.ResourceGroupLocation }}
+          echo "Azure resource group created"
+    
+    - name: Deployment
+      uses: azure/arm-deploy@v1
+      with:
+        resourceGroupName: ${{ env.ResourceGroupName }}
+        template: ./Sessions/bicep-deployments/session2/solutions/Task3/autodeploy.bicep
+        parameters: ./Sessions/bicep-deployments/session2/solutions/Task3/autodeploy.parameters.json
